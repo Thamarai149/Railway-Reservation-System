@@ -1,22 +1,28 @@
 package com.railway.util;
 
+import java.time.format.DateTimeFormatter;
+
 import com.railway.model.Ticket;
 import com.railway.model.Train;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.time.format.DateTimeFormatter;
 
 public class PDFTicketGenerator {
     
     public static boolean generateTicketPDF(Ticket ticket, Train train, String outputPath) {
         try {
+            // Create directory if it doesn't exist
+            java.io.File file = new java.io.File(outputPath);
+            java.io.File parentDir = file.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                parentDir.mkdirs();
+            }
+            
             // Create HTML content for the ticket
             String htmlContent = generateHTMLTicket(ticket, train);
             
             // Save as HTML file (can be converted to PDF by browser)
             String htmlPath = outputPath.replace(".pdf", ".html");
             
-            try (FileWriter writer = new FileWriter(htmlPath)) {
+            try (java.io.FileWriter writer = new java.io.FileWriter(htmlPath)) {
                 writer.write(htmlContent);
             }
             
@@ -25,7 +31,7 @@ public class PDFTicketGenerator {
             
             return true;
             
-        } catch (IOException e) {
+        } catch (java.io.IOException e) {
             System.err.println("Error generating ticket file: " + e.getMessage());
             return false;
         }
