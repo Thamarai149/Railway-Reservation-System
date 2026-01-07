@@ -1,152 +1,187 @@
 package com.railway.util;
 
-import java.time.format.DateTimeFormatter;
-
 import com.railway.model.Ticket;
 import com.railway.model.Train;
+import java.io.*;
+import java.time.format.DateTimeFormatter;
 
 public class PDFTicketGenerator {
     
     public static boolean generateTicketPDF(Ticket ticket, Train train, String outputPath) {
         try {
             // Create directory if it doesn't exist
-            java.io.File file = new java.io.File(outputPath);
-            java.io.File parentDir = file.getParentFile();
+            File file = new File(outputPath);
+            File parentDir = file.getParentFile();
             if (parentDir != null && !parentDir.exists()) {
                 parentDir.mkdirs();
             }
             
-            // Create HTML content for the ticket
-            String htmlContent = generateHTMLTicket(ticket, train);
+            // Generate simple PDF content using basic PDF structure
+            String pdfContent = generateSimplePDF(ticket, train);
             
-            // Save as HTML file (can be converted to PDF by browser)
-            String htmlPath = outputPath.replace(".pdf", ".html");
-            
-            try (java.io.FileWriter writer = new java.io.FileWriter(htmlPath)) {
-                writer.write(htmlContent);
+            // Save as PDF file
+            try (FileOutputStream fos = new FileOutputStream(outputPath)) {
+                fos.write(pdfContent.getBytes("ISO-8859-1"));
             }
             
-            System.out.println("[INFO] HTML ticket generated: " + htmlPath);
-            System.out.println("[INFO] You can open this file in a browser and print as PDF");
+            System.out.println("[INFO] PDF ticket generated: " + outputPath);
+            System.out.println("[INFO] File size: " + file.length() + " bytes");
             
             return true;
             
-        } catch (java.io.IOException e) {
-            System.err.println("Error generating ticket file: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Error generating PDF ticket: " + e.getMessage());
             return false;
         }
     }
     
-    private static String generateHTMLTicket(Ticket ticket, Train train) {
-        StringBuilder html = new StringBuilder();
+    private static String generateSimplePDF(Ticket ticket, Train train) {
+        StringBuilder pdf = new StringBuilder();
         
-        html.append("<!DOCTYPE html>\n");
-        html.append("<html>\n<head>\n");
-        html.append("<meta charset='UTF-8'>\n");
-        html.append("<title>Railway Ticket - ").append(ticket.getTicketId()).append("</title>\n");
-        html.append("<style>\n");
-        html.append("body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }\n");
-        html.append(".ticket { background: white; border: 2px solid #0066cc; padding: 20px; max-width: 800px; margin: 0 auto; }\n");
-        html.append(".header { text-align: center; color: #0066cc; border-bottom: 2px solid #0066cc; padding-bottom: 10px; margin-bottom: 20px; }\n");
-        html.append(".section { margin: 15px 0; }\n");
-        html.append(".section-title { background: #0066cc; color: white; padding: 8px; font-weight: bold; }\n");
-        html.append("table { width: 100%; border-collapse: collapse; margin: 10px 0; }\n");
-        html.append("td, th { border: 1px solid #ddd; padding: 8px; text-align: left; }\n");
-        html.append("th { background-color: #e6f2ff; }\n");
-        html.append(".important { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 15px 0; }\n");
-        html.append(".footer { text-align: center; color: #0066cc; font-weight: bold; margin-top: 20px; }\n");
-        html.append("@media print { body { background: white; } .ticket { border: none; } }\n");
-        html.append("</style>\n</head>\n<body>\n");
+        // PDF Header
+        pdf.append("%PDF-1.4\n");
+        pdf.append("1 0 obj\n");
+        pdf.append("<<\n");
+        pdf.append("/Type /Catalog\n");
+        pdf.append("/Pages 2 0 R\n");
+        pdf.append(">>\n");
+        pdf.append("endobj\n\n");
         
-        html.append("<div class='ticket'>\n");
+        // Pages object
+        pdf.append("2 0 obj\n");
+        pdf.append("<<\n");
+        pdf.append("/Type /Pages\n");
+        pdf.append("/Kids [3 0 R]\n");
+        pdf.append("/Count 1\n");
+        pdf.append(">>\n");
+        pdf.append("endobj\n\n");
         
-        // Header
-        html.append("<div class='header'>\n");
-        html.append("<h1>TAMIL NADU RAILWAY RESERVATION SYSTEM</h1>\n");
-        html.append("<h2>Electronic Reservation Slip (ERS)</h2>\n");
-        html.append("</div>\n");
+        // Page object
+        pdf.append("3 0 obj\n");
+        pdf.append("<<\n");
+        pdf.append("/Type /Page\n");
+        pdf.append("/Parent 2 0 R\n");
+        pdf.append("/MediaBox [0 0 400 600]\n"); // Small ticket size
+        pdf.append("/Contents 4 0 R\n");
+        pdf.append("/Resources <<\n");
+        pdf.append("/Font <<\n");
+        pdf.append("/F1 5 0 R\n");
+        pdf.append("/F2 6 0 R\n");
+        pdf.append(">>\n");
+        pdf.append(">>\n");
+        pdf.append(">>\n");
+        pdf.append("endobj\n\n");
         
-        // Journey Information
-        html.append("<div class='section'>\n");
-        html.append("<div class='section-title'>JOURNEY DETAILS</div>\n");
-        html.append("<table>\n");
-        html.append("<tr><th>From</th><th>To</th><th>Class</th><th>Date</th></tr>\n");
-        html.append("<tr><td>").append(train.getSource().toUpperCase()).append("</td>");
-        html.append("<td>").append(train.getDestination().toUpperCase()).append("</td>");
-        html.append("<td>GENERAL</td>");
-        html.append("<td>").append(ticket.getBookingTime().toLocalDate().toString()).append("</td></tr>\n");
-        html.append("</table>\n");
-        html.append("</div>\n");
+        // Content stream
+        String contentStream = generateContentStream(ticket, train);
+        pdf.append("4 0 obj\n");
+        pdf.append("<<\n");
+        pdf.append("/Length ").append(contentStream.length()).append("\n");
+        pdf.append(">>\n");
+        pdf.append("stream\n");
+        pdf.append(contentStream);
+        pdf.append("endstream\n");
+        pdf.append("endobj\n\n");
         
-        // Train Details
-        html.append("<div class='section'>\n");
-        html.append("<div class='section-title'>TRAIN INFORMATION</div>\n");
-        html.append("<table>\n");
-        html.append("<tr><th>Train No./Name</th><th>Departure</th><th>Arrival</th><th>PNR</th></tr>\n");
-        html.append("<tr><td>").append(train.getTrainId()).append(" / ").append(train.getTrainName()).append("</td>");
-        html.append("<td>").append(train.getDepartureTime()).append("</td>");
-        html.append("<td>").append(train.getArrivalTime()).append("</td>");
-        html.append("<td>TN").append(String.format("%010d", ticket.getTicketId())).append("</td></tr>\n");
-        html.append("</table>\n");
-        html.append("</div>\n");
+        // Font objects
+        pdf.append("5 0 obj\n");
+        pdf.append("<<\n");
+        pdf.append("/Type /Font\n");
+        pdf.append("/Subtype /Type1\n");
+        pdf.append("/BaseFont /Helvetica-Bold\n");
+        pdf.append(">>\n");
+        pdf.append("endobj\n\n");
         
-        // Passenger Details
-        html.append("<div class='section'>\n");
-        html.append("<div class='section-title'>PASSENGER DETAILS</div>\n");
-        html.append("<table>\n");
-        html.append("<tr><th>Name</th><th>Email</th><th>Phone</th><th>Seat No.</th></tr>\n");
-        html.append("<tr><td>").append(ticket.getPassengerName()).append("</td>");
-        html.append("<td>").append(ticket.getPassengerEmail()).append("</td>");
-        html.append("<td>").append(ticket.getPassengerPhone()).append("</td>");
-        html.append("<td>").append(ticket.getSeatNumber()).append("</td></tr>\n");
-        html.append("</table>\n");
-        html.append("</div>\n");
+        pdf.append("6 0 obj\n");
+        pdf.append("<<\n");
+        pdf.append("/Type /Font\n");
+        pdf.append("/Subtype /Type1\n");
+        pdf.append("/BaseFont /Helvetica\n");
+        pdf.append(">>\n");
+        pdf.append("endobj\n\n");
         
-        // Payment Details
-        html.append("<div class='section'>\n");
-        html.append("<div class='section-title'>PAYMENT DETAILS</div>\n");
-        html.append("<table>\n");
-        html.append("<tr><th>Description</th><th>Amount</th></tr>\n");
-        html.append("<tr><td>Ticket Fare</td><td>Rs. ").append(String.format("%.2f", ticket.getFare())).append("</td></tr>\n");
-        html.append("<tr><td>Convenience Fee</td><td>Rs. 0.00</td></tr>\n");
-        html.append("<tr><th>Total Amount</th><th>Rs. ").append(String.format("%.2f", ticket.getFare())).append("</th></tr>\n");
-        html.append("</table>\n");
-        html.append("</div>\n");
+        // Cross-reference table
+        pdf.append("xref\n");
+        pdf.append("0 7\n");
+        pdf.append("0000000000 65535 f \n");
+        pdf.append("0000000010 65535 n \n");
+        pdf.append("0000000079 65535 n \n");
+        pdf.append("0000000173 65535 n \n");
+        pdf.append("0000000301 65535 n \n");
+        pdf.append("0000000380 65535 n \n");
+        pdf.append("0000000484 65535 n \n");
         
-        // Transaction Details
-        html.append("<div class='section'>\n");
-        html.append("<div class='section-title'>TRANSACTION DETAILS</div>\n");
-        html.append("<table>\n");
-        html.append("<tr><td><strong>Transaction ID:</strong></td><td>TN")
-               .append(ticket.getBookingTime().toLocalDate().toString().replace("-", ""))
-               .append(String.format("%010d", ticket.getTicketId())).append("</td></tr>\n");
-        html.append("<tr><td><strong>Booking Time:</strong></td><td>")
-               .append(ticket.getBookingTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")))
-               .append("</td></tr>\n");
-        html.append("<tr><td><strong>Status:</strong></td><td>").append(ticket.getStatus()).append("</td></tr>\n");
-        html.append("</table>\n");
-        html.append("</div>\n");
+        // Trailer
+        pdf.append("trailer\n");
+        pdf.append("<<\n");
+        pdf.append("/Size 7\n");
+        pdf.append("/Root 1 0 R\n");
+        pdf.append(">>\n");
+        pdf.append("startxref\n");
+        pdf.append("565\n");
+        pdf.append("%%EOF\n");
         
-        // Important Instructions
-        html.append("<div class='important'>\n");
-        html.append("<h3>IMPORTANT INSTRUCTIONS:</h3>\n");
-        html.append("<ul>\n");
-        html.append("<li>Please carry a valid photo ID proof during journey</li>\n");
-        html.append("<li>Ticket is valid only for the specified train and date</li>\n");
-        html.append("<li>Report to station at least 30 minutes before departure</li>\n");
-        html.append("<li>This is a computer generated ticket and does not require signature</li>\n");
-        html.append("<li>Keep this ticket safe until the end of your journey</li>\n");
-        html.append("</ul>\n");
-        html.append("</div>\n");
+        return pdf.toString();
+    }
+    
+    private static String generateContentStream(Ticket ticket, Train train) {
+        StringBuilder content = new StringBuilder();
         
-        // Footer
-        html.append("<div class='footer'>\n");
-        html.append("<h2>TAMIL NADU RAILWAY - SAFE & COMFORTABLE JOURNEY</h2>\n");
-        html.append("<h3 style='color: green;'>*** HAPPY JOURNEY ***</h3>\n");
-        html.append("</div>\n");
+        content.append("BT\n");
+        content.append("/F1 14 Tf\n");
+        content.append("50 550 Td\n");
+        content.append("(TAMIL NADU RAILWAY) Tj\n");
+        content.append("0 -20 Td\n");
+        content.append("/F2 10 Tf\n");
+        content.append("(Electronic Ticket) Tj\n");
         
-        html.append("</div>\n</body>\n</html>");
+        content.append("0 -30 Td\n");
+        content.append("/F1 10 Tf\n");
+        content.append("(PNR: TN").append(String.format("%010d", ticket.getTicketId())).append(") Tj\n");
         
-        return html.toString();
+        content.append("0 -20 Td\n");
+        content.append("(Train: ").append(train.getTrainId()).append(" / ").append(train.getTrainName()).append(") Tj\n");
+        
+        content.append("0 -20 Td\n");
+        content.append("(From: ").append(train.getSource()).append(" To: ").append(train.getDestination()).append(") Tj\n");
+        
+        content.append("0 -20 Td\n");
+        content.append("(Departure: ").append(train.getDepartureTime()).append(") Tj\n");
+        
+        content.append("0 -20 Td\n");
+        content.append("(Arrival: ").append(train.getArrivalTime()).append(") Tj\n");
+        
+        content.append("0 -30 Td\n");
+        content.append("(Passenger: ").append(ticket.getPassengerName()).append(") Tj\n");
+        
+        content.append("0 -20 Td\n");
+        content.append("(Seat: ").append(ticket.getSeatNumber()).append(" | Class: GENERAL) Tj\n");
+        
+        content.append("0 -20 Td\n");
+        content.append("(Phone: ").append(ticket.getPassengerPhone()).append(") Tj\n");
+        
+        content.append("0 -30 Td\n");
+        content.append("(Fare: Rs. ").append(String.format("%.2f", ticket.getFare())).append(") Tj\n");
+        
+        content.append("0 -20 Td\n");
+        content.append("(Date: ").append(ticket.getBookingTime().toLocalDate().toString()).append(") Tj\n");
+        
+        content.append("0 -20 Td\n");
+        content.append("(Status: ").append(ticket.getStatus()).append(") Tj\n");
+        
+        content.append("0 -40 Td\n");
+        content.append("/F2 8 Tf\n");
+        content.append("(Carry valid ID proof during journey) Tj\n");
+        
+        content.append("0 -15 Td\n");
+        content.append("(Report 30 min before departure) Tj\n");
+        
+        content.append("0 -30 Td\n");
+        content.append("/F1 10 Tf\n");
+        content.append("(*** HAPPY JOURNEY ***) Tj\n");
+        
+        content.append("ET\n");
+        
+        return content.toString();
     }
 }
