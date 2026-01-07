@@ -129,127 +129,145 @@ public class PDFTicketGenerator {
     private static String generateContentStream(Ticket ticket, Train train) {
         StringBuilder content = new StringBuilder();
         
-        // Draw border and background similar to ATVM ticket
+        // Draw modern ticket design
         content.append("q\n"); // Save graphics state
         
-        // Orange header background (like ATVM ticket)
-        content.append("1 0.5 0 rg\n"); // Orange color
-        content.append("0 150 288 30 re\n"); // Header rectangle
-        content.append("f\n"); // Fill
+        // Main background - Light cream color
+        content.append("0.98 0.97 0.94 rg\n"); // Cream background
+        content.append("0 0 288 180 re\n");
+        content.append("f\n");
         
-        // White background for main content
+        // Header section - Dark blue gradient effect
+        content.append("0.1 0.2 0.5 rg\n"); // Dark blue
+        content.append("0 150 288 30 re\n");
+        content.append("f\n");
+        
+        // Side accent bar - Orange
+        content.append("1 0.4 0 rg\n"); // Orange accent
+        content.append("0 0 8 180 re\n");
+        content.append("f\n");
+        
+        // Content area background
         content.append("1 1 1 rg\n"); // White
-        content.append("0 0 288 150 re\n"); // Main content area
-        content.append("f\n"); // Fill
+        content.append("8 8 280 142 re\n");
+        content.append("f\n");
         
         // Border
-        content.append("0 0 0 RG\n"); // Black stroke color
-        content.append("1 w\n"); // Line width
-        content.append("0 0 288 180 re\n"); // Rectangle border
-        content.append("S\n"); // Stroke
+        content.append("0.2 0.2 0.2 RG\n"); // Dark gray border
+        content.append("1.5 w\n");
+        content.append("0 0 288 180 re\n");
+        content.append("S\n");
         
-        // Separator line under header
-        content.append("0.5 0.5 0.5 RG\n"); // Gray line
+        // Decorative lines
+        content.append("0.8 0.8 0.8 RG\n"); // Light gray
         content.append("0.5 w\n");
-        content.append("5 148 278 0 re\n"); // Horizontal line
+        content.append("15 145 258 0 re\n"); // Under header
+        content.append("S\n");
+        content.append("15 25 258 0 re\n"); // Above footer
         content.append("S\n");
         
         content.append("Q\n"); // Restore graphics state
         
         content.append("BT\n");
         
-        // Header - White text on orange background, better spaced
-        content.append("1 1 1 rg\n"); // White color
-        content.append("/F1 10 Tf\n");
-        content.append("8 162 Td\n");
+        // Header - White text on dark blue
+        content.append("1 1 1 rg\n"); // White
+        content.append("/F1 11 Tf\n");
+        content.append("15 162 Td\n");
         content.append("(TAMIL NADU RAILWAY) Tj\n");
         
-        content.append("90 0 Td\n"); // Move right for PNR
-        content.append("/F1 9 Tf\n");
+        // PNR in header - right aligned
+        content.append("120 0 Td\n");
+        content.append("/F1 10 Tf\n");
         content.append("(PNR: TN").append(String.format("%010d", ticket.getTicketId())).append(") Tj\n");
         
-        // Journey type and UTS number - better aligned
-        content.append("-90 -18 Td\n"); // Move back to left and down
-        content.append("0 0 0 rg\n"); // Black text
-        content.append("/F1 8 Tf\n");
-        content.append("(JOURNEY TICKET) Tj\n");
+        // Ticket type
+        content.append("-120 -18 Td\n");
+        content.append("0.1 0.2 0.5 rg\n"); // Dark blue
+        content.append("/F1 9 Tf\n");
+        content.append("(E-TICKET) Tj\n");
         
-        content.append("140 0 Td\n"); // Move right
-        content.append("(UTS NO: TN").append(String.format("%06d", ticket.getTicketId())).append(") Tj\n");
+        content.append("180 0 Td\n");
+        content.append("/F2 8 Tf\n");
+        content.append("(UTS: TN").append(String.format("%06d", ticket.getTicketId())).append(") Tj\n");
         
-        // Route information - Bold and prominent
-        content.append("-140 -15 Td\n"); // Move back to left and down
-        content.append("/F1 11 Tf\n"); // Larger font for route
-        content.append("(").append(train.getSource().toUpperCase()).append(" TO ").append(train.getDestination().toUpperCase()).append(") Tj\n");
+        // Route - Large and prominent
+        content.append("-180 -18 Td\n");
+        content.append("0 0 0 rg\n"); // Black
+        content.append("/F1 13 Tf\n");
+        content.append("(").append(train.getSource().toUpperCase()).append(" → ").append(train.getDestination().toUpperCase()).append(") Tj\n");
         
-        // Train details
-        content.append("0 -13 Td\n");
+        // Train details in a box-like format
+        content.append("0 -16 Td\n");
+        content.append("0.3 0.3 0.3 rg\n"); // Dark gray
         content.append("/F2 7 Tf\n");
-        content.append("(Train: ").append(train.getTrainId()).append(" / ").append(train.getTrainName()).append(") Tj\n");
+        content.append("(TRAIN: ").append(train.getTrainId()).append(" | ").append(train.getTrainName().toUpperCase()).append(") Tj\n");
         
-        // Passenger info
+        // Passenger section
+        content.append("0 -14 Td\n");
+        content.append("0 0 0 rg\n"); // Black
+        content.append("/F1 8 Tf\n");
+        content.append("(PASSENGER: ").append(ticket.getPassengerName().toUpperCase()).append(") Tj\n");
+        
+        // Seat and class in columns
         content.append("0 -12 Td\n");
-        content.append("(Passenger: ").append(ticket.getPassengerName()).append(") Tj\n");
+        content.append("/F2 7 Tf\n");
+        content.append("(SEAT: ").append(ticket.getSeatNumber()).append(") Tj\n");
         
-        // Seat and class info
-        content.append("0 -12 Td\n");
-        content.append("(Seat: ").append(ticket.getSeatNumber()).append("   Class: GENERAL) Tj\n");
+        content.append("80 0 Td\n");
+        content.append("(CLASS: GENERAL) Tj\n");
         
-        // Fare and timing on same line with better spacing
+        content.append("80 0 Td\n");
+        content.append("(QUOTA: GN) Tj\n");
+        
+        // Journey details row
+        content.append("-160 -14 Td\n");
         content.append("0.8 0 0 rg\n"); // Red for fare
-        content.append("0 -13 Td\n");
         content.append("/F1 8 Tf\n");
-        content.append("(Fare: Rs. ").append(String.format("%.2f", ticket.getFare())).append(") Tj\n");
+        content.append("(FARE: Rs. ").append(String.format("%.2f", ticket.getFare())).append(") Tj\n");
         
         content.append("0 0 0 rg\n"); // Black
-        content.append("90 0 Td\n"); // Move right
-        content.append("(Dep: ").append(train.getDepartureTime()).append(") Tj\n");
+        content.append("70 0 Td\n");
+        content.append("(DEP: ").append(train.getDepartureTime()).append(") Tj\n");
         
-        // Date and status on same line
-        content.append("-90 -12 Td\n"); // Move back to left and down
+        content.append("70 0 Td\n");
+        content.append("(ARR: ").append(train.getArrivalTime()).append(") Tj\n");
+        
+        // Date and status row
+        content.append("-140 -12 Td\n");
         content.append("/F2 7 Tf\n");
-        content.append("(Date: ").append(ticket.getBookingTime().toLocalDate().toString()).append(") Tj\n");
+        content.append("(DATE: ").append(ticket.getBookingTime().toLocalDate().toString()).append(") Tj\n");
         
-        // Status with color
+        // Status with background color effect
         if ("BOOKED".equals(ticket.getStatus())) {
-            content.append("0 0.7 0 rg\n"); // Green for BOOKED
+            content.append("0 0.7 0 rg\n"); // Green
         } else {
-            content.append("0.8 0 0 rg\n"); // Red for CANCELLED
+            content.append("0.8 0 0 rg\n"); // Red
         }
-        content.append("90 0 Td\n"); // Move right
-        content.append("(Status: ").append(ticket.getStatus()).append(") Tj\n");
+        content.append("100 0 Td\n");
+        content.append("/F1 8 Tf\n");
+        content.append("(STATUS: ").append(ticket.getStatus()).append(") Tj\n");
         
-        // Transaction details
+        // Transaction and contact info
         content.append("0 0 0 rg\n"); // Black
-        content.append("-90 -12 Td\n"); // Move back to left and down
-        content.append("(TXN: TN").append(ticket.getBookingTime().toLocalDate().toString().replace("-", "")).append(String.format("%06d", ticket.getTicketId())).append(") Tj\n");
-        
-        // Phone number
-        content.append("0 -10 Td\n");
-        content.append("(Contact: ").append(ticket.getPassengerPhone()).append(") Tj\n");
-        
-        // Separator line before footer
-        content.append("ET\n"); // End text
-        content.append("q\n");
-        content.append("0.7 0.7 0.7 RG\n"); // Light gray line
-        content.append("0.5 w\n");
-        content.append("8 25 272 0 re\n"); // Horizontal line
-        content.append("S\n");
-        content.append("Q\n");
-        content.append("BT\n");
-        
-        // Footer - Important note
-        content.append("0.4 0.4 0.4 rg\n"); // Gray
-        content.append("8 18 Td\n"); // Position for footer
+        content.append("-100 -12 Td\n");
         content.append("/F2 6 Tf\n");
-        content.append("(Carry valid ID proof. Report 30 min before departure.) Tj\n");
+        content.append("(TXN ID: TN").append(ticket.getBookingTime().toLocalDate().toString().replace("-", "")).append(String.format("%06d", ticket.getTicketId())).append(") Tj\n");
         
-        // Happy Journey - centered
-        content.append("0 0.5 1 rg\n"); // Blue
-        content.append("-8 -10 Td\n"); // Reset position
-        content.append("50 0 Td\n"); // Center the text
-        content.append("/F1 7 Tf\n");
-        content.append("(*** HAPPY JOURNEY - TAMIL NADU RAILWAY ***) Tj\n");
+        content.append("0 -8 Td\n");
+        content.append("(CONTACT: ").append(ticket.getPassengerPhone()).append(" | EMAIL: ").append(ticket.getPassengerEmail()).append(") Tj\n");
+        
+        // Footer section
+        content.append("0.5 0.5 0.5 rg\n"); // Gray
+        content.append("0 -16 Td\n");
+        content.append("/F2 6 Tf\n");
+        content.append("(• Carry valid photo ID • Report 30 min before departure • Keep ticket safe) Tj\n");
+        
+        // Happy journey - centered and styled
+        content.append("0.1 0.4 0.8 rg\n"); // Blue
+        content.append("40 -10 Td\n");
+        content.append("/F1 8 Tf\n");
+        content.append("(★ ★ ★  HAPPY JOURNEY - TAMIL NADU RAILWAY  ★ ★ ★) Tj\n");
         
         content.append("ET\n");
         
