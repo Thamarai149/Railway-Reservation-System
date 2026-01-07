@@ -11,5 +11,8 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/mysql-connector-j-8.0.33.jar"/>
+	<classpathentry kind="lib" path="lib/pdfbox-2.0.29.jar"/>
+	<classpathentry kind="lib" path="lib/fontbox-2.0.29.jar"/>
+	<classpathentry kind="lib" path="lib/commons-logging-1.2.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
