@@ -1,9 +1,11 @@
 package com.railway.util;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import com.railway.model.Ticket;
 import com.railway.model.Train;
-import java.io.*;
-import java.time.format.DateTimeFormatter;
 
 public class PDFTicketGenerator {
     
